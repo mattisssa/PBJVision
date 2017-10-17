@@ -228,6 +228,8 @@ static CGFloat const PBJVideoBitRate1280x750 = 5000000 * 8;
 @property (nonatomic, readonly) EAGLContext *context;
 @property (nonatomic) CGRect presentationFrame;
 
+@property (nonatomic, assign) NSInteger bufferFrameRate;
+
 @property (nonatomic) CMTime maximumCaptureDuration; // automatically triggers vision:capturedVideo:error: after exceeding threshold, (kCMTimeInvalid records without threshold)
 @property (nonatomic, readonly) Float64 capturedAudioSeconds;
 @property (nonatomic, readonly) Float64 capturedVideoSeconds;
@@ -314,6 +316,7 @@ static CGFloat const PBJVideoBitRate1280x750 = 5000000 * 8;
 // video capture progress
 
 - (void)vision:(PBJVision *)vision didCaptureVideoSampleBuffer:(CMSampleBufferRef)sampleBuffer;
+- (void)vision:(PBJVision *)vision didOutputSampleBuffer:(CMSampleBufferRef)sampleBuffer withFrameRate:(NSUInteger)currentFrameRate;
 - (void)vision:(PBJVision *)vision didCaptureAudioSample:(CMSampleBufferRef)sampleBuffer;
 
 NS_ASSUME_NONNULL_END
