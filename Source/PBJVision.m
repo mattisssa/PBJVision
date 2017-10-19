@@ -2198,7 +2198,7 @@ previewPhotoSampleBuffer:(CMSampleBufferRef)previewPhotoSampleBuffer
         return;
     }
     
-    if (self.bufferFrameRate > 0) {
+    if (self.bufferFrameRate > 0 && _previewLayer.connection.enabled) {
         if (self.bufferFrameRate == _currentBufferFrame) {
             CMSampleBufferRef bufferToFrameRatedDelegate = sampleBuffer;
             CFRetain(bufferToFrameRatedDelegate);
