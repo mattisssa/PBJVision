@@ -261,6 +261,11 @@ PBJMediaWriterDelegate>
     _flags.videoRenderingEnabled = (unsigned int)videoRenderingEnabled;
 }
 
+- (void)setBufferFrameRate:(NSInteger)bufferFrameRate {
+    _bufferFrameRate = bufferFrameRate;
+    _currentBufferFrame = 0;
+}
+
 - (BOOL)isVideoRenderingEnabled
 {
     return _flags.videoRenderingEnabled;
@@ -2212,6 +2217,9 @@ previewPhotoSampleBuffer:(CMSampleBufferRef)previewPhotoSampleBuffer
             _currentBufferFrame = 0;
         } else {
             _currentBufferFrame += 1;
+            if (_currentBufferFrame > self.bufferFrameRate) {
+                _currentBufferFrame = 0;
+            }
         }
     }
     
