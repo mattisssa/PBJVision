@@ -839,9 +839,9 @@ typedef void (^PBJVisionBlock)();
         _captureOutputPhoto = [[AVCapturePhotoOutput alloc] init];
         _captureOutputPhoto.highResolutionCaptureEnabled = YES;
     }
-    else {
+//    else {
         _captureOutputImage = [[AVCaptureStillImageOutput alloc] init];
-    }
+//    }
     
     if (_cameraMode != PBJCameraModePhoto && _flags.audioCaptureEnabled) {
         _captureOutputAudio = [[AVCaptureAudioDataOutput alloc] init];
@@ -882,9 +882,9 @@ typedef void (^PBJVisionBlock)();
     [self addObserver:self forKeyPath:@"currentDevice.torchAvailable" options:NSKeyValueObservingOptionNew context:(__bridge void *)PBJVisionTorchAvailabilityObserverContext];
     
     // KVO is only used to monitor focus and capture events
-    if (![AVCapturePhotoOutput class]) {
+//    if (![AVCapturePhotoOutput class]) {
         [_captureOutputImage addObserver:self forKeyPath:@"capturingStillImage" options:NSKeyValueObservingOptionNew context:(__bridge void *)(PBJVisionCaptureStillImageIsCapturingStillImageObserverContext)];
-    }
+//    }
     
     DLog(@"camera setup");
 }
@@ -905,9 +905,9 @@ typedef void (^PBJVisionBlock)();
     [self removeObserver:self forKeyPath:@"currentDevice.torchAvailable"];
     
     // capture events KVO notifications
-    if (![AVCapturePhotoOutput class]) {
+//    if (![AVCapturePhotoOutput class]) {
         [_captureOutputImage removeObserver:self forKeyPath:@"capturingStillImage"];
-    }
+//    }
     
     // remove notification observers (we don't want to just 'remove all' because we're also observing background notifications
     NSNotificationCenter *notificationCenter = [NSNotificationCenter defaultCenter];
@@ -981,6 +981,13 @@ typedef void (^PBJVisionBlock)();
     AVCaptureDevice *newCaptureDevice = nil;
     
     [_captureSession beginConfiguration];
+    
+    if ([_captureSession canAddOutput:_captureOutputImage]) {
+        _captureOutputImage.outputSettings = @{AVVideoCodecKey: AVVideoCodecJPEG};
+        
+        [_captureSession addOutput:_captureOutputImage];
+    }
+    
     
     // setup session device
     
@@ -1722,39 +1729,49 @@ typedef void (^PBJVisionBlock)();
         }
     }
     
-    if ([_delegate respondsToSelector:@selector(vision:capturedPhoto:error:)]) {
-        [_delegate vision:self capturedPhoto:photoDict error:error];
-    }
+    [self _enqueueBlockOnMainQueue:^{
+        if ([_delegate respondsToSelector:@selector(vision:capturedPhoto:error:)]) {
+            [_delegate vision:self capturedPhoto:photoDict error:error];
+        }
+    }];
     
     // run a post shot focus
     [self performSelector:@selector(_adjustFocusExposureAndWhiteBalance) withObject:nil afterDelay:0.5f];
 }
 
-- (void)capturePhoto
-{
-    if (![self _canSessionCaptureWithOutput:_currentOutput] || _cameraMode != PBJCameraModePhoto) {
-        [self _failPhotoCaptureWithErrorCode:PBJVisionErrorSessionFailed];
-        DLog(@"session is not setup properly for capture");
-        return;
-    }
+- (void)capturePhoto {
+//    if (![self _canSessionCaptureWithOutput:_currentOutput] || _cameraMode != PBJCameraModePhoto) {
+//        [self _failPhotoCaptureWithErrorCode:PBJVisionErrorSessionFailed];
+//        DLog(@"session is not setup properly for capture");
+//        return;
+//    }
     
-    AVCaptureConnection *connection = [_currentOutput connectionWithMediaType:AVMediaTypeVideo];
-    [self _setOrientationForConnection:connection];
-    
-    if ([AVCapturePhotoOutput class]) {
-        AVCapturePhotoSettings *settings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecJPEG}];
-        settings.highResolutionPhotoEnabled = YES;
-        settings.flashMode = [self isFlashAvailable] ? (AVCaptureFlashMode)self.flashMode : AVCaptureFlashModeOff;
-        
-        [_captureOutputPhoto capturePhotoWithSettings:settings delegate:self];
-    }
-    else {
-        [_captureOutputImage captureStillImageAsynchronouslyFromConnection:connection completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
-            
-            [self _processImageWithPhotoSampleBuffer:imageDataSampleBuffer previewSampleBuffer:nil error:error];
+//    AVCaptureConnection *connection = [_currentOutput connectionWithMediaType:AVMediaTypeVideo];
+//    [self _setOrientationForConnection:connection];
+//
+//    if ([AVCapturePhotoOutput class]) {
+//        AVCapturePhotoSettings *settings = [AVCapturePhotoSettings photoSettingsWithFormat:@{AVVideoCodecKey : AVVideoCodecJPEG}];
+//        NSNumber *previewPixelType = settings.availablePreviewPhotoPixelFormatTypes.firstObject;
+//        NSDictionary *previewFormat = @{
+//                                        (__bridge NSString *)kCVPixelBufferPixelFormatTypeKey : previewPixelType,
+//                                        (__bridge NSString *)kCVPixelBufferWidthKey : @160,
+//                                        (__bridge NSString *)kCVPixelBufferHeightKey : @160
+//                                        };
+//        settings.previewPhotoFormat = previewFormat;
+//        settings.highResolutionPhotoEnabled = YES;
+//        settings.flashMode = [self isFlashAvailable] ? (AVCaptureFlashMode)self.flashMode : AVCaptureFlashModeOff;
+//
+//        [_captureOutputPhoto capturePhotoWithSettings:settings delegate:self];
+//    }
+//    else {
+    __weak typeof(self) weakSelf = self;
+    [self _enqueueBlockOnCaptureSessionQueue:^{
+        [_captureOutputImage captureStillImageAsynchronouslyFromConnection:[_captureOutputImage connectionWithMediaType:AVMediaTypeVideo] completionHandler:^(CMSampleBufferRef imageDataSampleBuffer, NSError *error) {
+            __strong typeof(weakSelf) strongSelf = weakSelf;
+            [strongSelf _processImageWithPhotoSampleBuffer:imageDataSampleBuffer previewSampleBuffer:nil error:error];
         }];
-        
-    }
+    }];
+//    }
 }
 
 #pragma mark - video

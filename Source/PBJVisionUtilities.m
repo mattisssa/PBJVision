@@ -106,7 +106,7 @@
     CGImageRef jpegCGImage = NULL;
     CGDataProviderRef provider = CGDataProviderCreateWithCFData((__bridge CFDataRef)jpegData);
     
-    UIImageOrientation imageOrientation = UIImageOrientationUp;
+    UIImageOrientation imageOrientation = UIImageOrientationLeft;
     
     if (provider) {
         CGImageSourceRef imageSource = CGImageSourceCreateWithDataProvider(provider, NULL);
@@ -119,12 +119,13 @@
                 if (properties) {
                     // set orientation
                     CFNumberRef orientationProperty = CFDictionaryGetValue(properties, kCGImagePropertyOrientation);
+
                     if (orientationProperty) {
                         NSInteger exifOrientation = 1;
                         CFNumberGetValue(orientationProperty, kCFNumberIntType, &exifOrientation);
                         imageOrientation = [PBJVisionUtilities uiimageOrientationFromExifOrientation:exifOrientation];
                     }
-                    
+
                     CFRelease(properties);
                 }
                 
@@ -139,6 +140,12 @@
         image = [[UIImage alloc] initWithCGImage:jpegCGImage scale:1.0 orientation:imageOrientation];
         CGImageRelease(jpegCGImage);
     }
+    
+    UIGraphicsBeginImageContextWithOptions(image.size, YES, image.scale);
+    [image drawInRect:CGRectMake(0, 0, image.size.width, image.size.height)];
+    image = UIGraphicsGetImageFromCurrentImageContext();
+    UIGraphicsEndImageContext();
+    
     return image;
 }
 
